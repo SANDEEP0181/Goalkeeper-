@@ -443,7 +443,7 @@ async function ensureTonConnect() {
       connectedWalletAddress = wallet?.account?.address || "";
       updateWalletUI();
       if (connectedWalletAddress) {
-        awardMission("connect", 10);
+        if (window.GoalkeeperBackend?.mission) window.GoalkeeperBackend.mission("connect");
         setText(walletStatus, "Wallet connected");
         setText(profileActivity, "Session activity: TON wallet connected.");
         try { sessionStorage.setItem("goalkeeperWalletConnected", "1"); } catch {}
@@ -632,7 +632,7 @@ async function linkWalletIdentity() {
     const result = await response.json();
     if (!response.ok || !result.ok) throw new Error(result.error || "Identity link failed");
     // Identity-link tokens are never persisted in browser storage. The server is authoritative.
-    awardMission("link", 15);
+    
     setText(identityStatus, "Identity Linked");
     setText(identityMessage, "Telegram identity and TON wallet are linked for this session.");
     setText(profileLinkStatus, "Identity Linked");
@@ -693,7 +693,7 @@ function updateCheckinTimer(){
 
 function getCurrentPoints(){
   try {
-    const raw = localStorage.getItem(POINTS_KEY);
+    const raw = localStorage.getItem("goalkeeperServerPoints") ?? localStorage.getItem(POINTS_KEY);
     if (raw !== null) return Number(raw) || 0;
     const text = document.getElementById("pointsTotal")?.textContent || "0";
     return Number(text.match(/\d+/)?.[0] || 0);
@@ -701,10 +701,10 @@ function getCurrentPoints(){
 }
 
 function updateRewards(){
-  const opened=getMissions(); if(!opened.open)awardMission("open",5);
+  const opened=getMissions(); if(!opened.open && telegramVerified && window.GoalkeeperBackend?.mission){ window.GoalkeeperBackend.mission("open"); }
   const points=getCurrentPoints(); const checked=localStorage.getItem(CHECKIN_KEY)===todayKey();
   setText(pointsTotal,points+" Points"); setText(rewardPoints,points+" Points"); updateLevel(points); updateStreakUI();
-  setText(missionTelegram,telegramVerified?"Verified":"Pending"); setText(missionWallet,getWalletAddress()?"Connected":"Pending"); setText(missionIdentity,localStorage.getItem("goalkeeperIdentityLink")?"Linked":"Pending"); setText(missionCheckin,checked?"Completed today":"Available");
+  setText(missionTelegram,telegramVerified?"Verified":"Pending"); setText(missionWallet,getWalletAddress()?"Connected":"Pending"); setText(missionIdentity,getMissions().link?"Linked":"Pending"); setText(missionCheckin,checked?"Completed today":"Available");
   updateCheckinTimer(); updateMissionUI(); updateAchievements();
   setText(pointsMessage,checked?"Today's testnet check-in is complete.":"Browser mode: daily testnet check-in is available. Telegram verification is optional.");
 }
@@ -753,7 +753,7 @@ async function handleDailyCheckin(){
 
 async function logoutSession(){
   try{if(tonConnectUI)await tonConnectUI.disconnect();}catch(error){console.warn("Wallet disconnect:",error);}
-  telegramInitData=""; telegramVerified=false; connectedWalletAddress=""; localStorage.removeItem("goalkeeperIdentityLink");
+  telegramInitData=""; telegramVerified=false; connectedWalletAddress="";
   setText(telegramStatus,"Logged out"); setText(telegramUser,"Telegram session cleared. Open Goalkeeper from Telegram to log in again."); setText(profileStatus,"Profile pending"); setText(profileIdentity,"Complete Telegram verification to create your secure profile."); setText(goalkeeperUserId,"—"); setText(profileTelegram,"—"); setText(profileWallet,"Not connected"); setText(profileLinkStatus,"—"); setText(profileActivity,"Waiting");
   updateAuthButtons(); updateWalletUI(); updateRewards();
 }
@@ -769,8 +769,6 @@ async function disconnectWallet(){
 
     // Wallet disconnect must not erase the user's testnet points,
     // daily check-in, streak, or mission history.
-    localStorage.removeItem("goalkeeperIdentityLink");
-
     setText(profileWallet,"Not connected");
     setText(profileLinkStatus,"—");
     setText(profileActivity,"Session activity: Wallet disconnected.");
