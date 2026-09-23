@@ -520,7 +520,7 @@ function updateProfileWallet() {
 
 function updateIdentityState() {
   const connected = Boolean(getWalletAddress());
-  const linked = Boolean(localStorage.getItem("goalkeeperIdentityLink"));
+  const linked = Boolean(getMissions().link);
 
   if (telegramVerified && connected) {
     if (linkWalletBtn) linkWalletBtn.disabled = linked;
@@ -631,7 +631,7 @@ async function linkWalletIdentity() {
     const response = await fetch(IDENTITY_LINK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: telegramInitData, walletAddress: wallet }) });
     const result = await response.json();
     if (!response.ok || !result.ok) throw new Error(result.error || "Identity link failed");
-    localStorage.setItem("goalkeeperIdentityLink", result.linkToken);
+    // Identity-link tokens are never persisted in browser storage. The server is authoritative.
     awardMission("link", 15);
     setText(identityStatus, "Identity Linked");
     setText(identityMessage, "Telegram identity and TON wallet are linked for this session.");
