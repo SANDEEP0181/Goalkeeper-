@@ -443,11 +443,21 @@ async function ensureTonConnect() {
       updateWalletUI();
       if (connectedWalletAddress) {
         if (window.GoalkeeperBackend?.mission) window.GoalkeeperBackend.mission("connect");
-        setText(walletStatus, "Wallet connected");
+        const proof = wallet?.connectItems?.tonProof?.proof;
+        if (proof) {
+          window.GoalkeeperTonProof = {
+            proof,
+            publicKey: wallet?.account?.publicKey || "",
+            stateInit: wallet?.account?.walletStateInit || wallet?.account?.stateInit || "",
+            network: wallet?.account?.chain || wallet?.account?.network || "-3"
+          };
+        }
+        setText(walletStatus, proof ? "Wallet connected • ownership proof ready" : "Wallet connected");
         setText(profileActivity, "Session activity: TON wallet connected.");
         try { sessionStorage.setItem("goalkeeperWalletConnected", "1"); } catch {}
         handleWalletReturn();
       } else {
+        window.GoalkeeperTonProof = null;
         setText(walletStatus, "Wallet not connected");
       }
     });
@@ -473,6 +483,7 @@ async function connectNewWallet() {
     button.setAttribute("aria-busy", "true");
   }
   setText(walletStatus, "Opening TON wallet selector...");
+  window.GoalkeeperTonProof = null;
 
   try {
     // Initialize only when the user clicks. This avoids a startup failure
@@ -482,6 +493,24 @@ async function connectNewWallet() {
 
     if (typeof ui.openModal !== "function") {
       throw new Error("TON Connect wallet selector is unavailable.");
+    }
+
+    if (telegramVerified && telegramInitData && typeof ui.setConnectRequestParameters === "function") {
+      ui.setConnectRequestParameters({ state: "loading" });
+      const proofResponse = await fetch("https://sandy-chain-hub.vercel.app/api/goalkeeper/ton-proof", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: telegramInitData })
+      });
+      const proofData = await proofResponse.json();
+      if (!proofResponse.ok || !proofData.ok || !proofData.payload) {
+        ui.setConnectRequestParameters(null);
+        throw new Error(proofData.error || "TON proof challenge unavailable");
+      }
+      ui.setConnectRequestParameters({
+        state: "ready",
+        value: { tonProof: proofData.payload }
+      });
     }
 
     await ui.openModal();
@@ -514,7 +543,7 @@ function bindWalletButtons() {
 function updateProfileWallet() {
   const address = getWalletAddress();
   setText(profileWallet, address ? address : "Not connected");
-  setText(profileLinkStatus, localStorage.getItem("goalkeeperIdentityLink") ? "Identity Linked" : "Not linked");
+  setText(profileLinkStatus, getMissions().link ? "Identity Linked" : "Not linked");
 }
 
 function updateIdentityState() {
@@ -622,18 +651,35 @@ async function loadProfileSession() {
 
 async function linkWalletIdentity() {
   const wallet = getWalletAddress();
-  if (!telegramVerified || !telegramInitData || !wallet) { updateIdentityState(); return; }
+  const proofBundle = window.GoalkeeperTonProof;
+  if (!telegramVerified || !telegramInitData || !wallet || !proofBundle?.proof) {
+    setText(identityStatus, "Ownership proof required");
+    setText(identityMessage, "Reconnect your TON wallet so Goalkeeper can verify wallet ownership.");
+    updateIdentityState();
+    return;
+  }
   if (linkWalletBtn) linkWalletBtn.disabled = true;
-  setText(identityStatus, "Linking...");
-  setText(identityMessage, "Preparing secure identity link...");
+  setText(identityStatus, "Verifying TON ownership...");
+  setText(identityMessage, "Checking wallet ownership securely...");
   try {
-    const response = await fetch(IDENTITY_LINK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: telegramInitData, walletAddress: wallet }) });
+    const response = await fetch(IDENTITY_LINK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        initData: telegramInitData,
+        walletAddress: wallet,
+        tonProof: proofBundle.proof,
+        publicKey: proofBundle.publicKey,
+        stateInit: proofBundle.stateInit,
+        network: proofBundle.network
+      })
+    });
     const result = await response.json();
     if (!response.ok || !result.ok) throw new Error(result.error || "Identity link failed");
     // Identity-link tokens are never persisted in browser storage. The server is authoritative.
     
     setText(identityStatus, "Identity Linked");
-    setText(identityMessage, "Telegram identity and TON wallet are linked for this session.");
+    setText(identityMessage, "Telegram identity and TON wallet ownership verified.");
     setText(profileLinkStatus, "Identity Linked");
     setText(profileActivity, "Session activity: Telegram + TON wallet linked.");
     updateRewards();
