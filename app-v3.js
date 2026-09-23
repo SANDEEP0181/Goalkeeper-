@@ -330,7 +330,19 @@ function updateWalletUI() {
   if (connectedWalletChip) connectedWalletChip.hidden = !connected;
   setText(connectedWalletAddressEl, connected ? shortAddress(address) : "—");
 
-  if (connectBtn) connectBtn.hidden = connected;
+  // Keep the header controls deterministic: when no live TON account exists,
+  // the Connect button must be visible even if a previous render left [hidden] behind.
+  if (connectBtn) {
+    if (connected) {
+      connectBtn.hidden = true;
+      connectBtn.setAttribute("aria-hidden", "true");
+    } else {
+      connectBtn.hidden = false;
+      connectBtn.removeAttribute("hidden");
+      connectBtn.removeAttribute("aria-hidden");
+      connectBtn.style.removeProperty("display");
+    }
+  }
   if (disconnectBtn) disconnectBtn.hidden = !connected;
   if (disconnectWalletBtn) disconnectWalletBtn.hidden = !connected;
 
