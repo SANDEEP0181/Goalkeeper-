@@ -282,16 +282,15 @@ function saveMissions(value) { localStorage.setItem(MISSIONS_KEY, JSON.stringify
 function awardMission(id, points) {
   const missions = getMissions();
   if (missions[id]) return false;
+  if (telegramVerified && window.GoalkeeperBackend?.mission) {
+    const backendId = id === "link" ? "identity" : id;
+    window.GoalkeeperBackend.mission(backendId).then(() => window.GoalkeeperBackend.sync?.()).catch(() => {});
+    return true;
+  }
   const current = Number(localStorage.getItem(POINTS_KEY) || "0");
   localStorage.setItem(POINTS_KEY, String(current + points));
   missions[id] = { completedAt: new Date().toISOString(), points };
   saveMissions(missions);
-  try {
-    if (window.GoalkeeperBackend?.mission) {
-      const backendId = id === "link" ? "identity" : id;
-      window.GoalkeeperBackend.mission(backendId);
-    }
-  } catch {}
   return true;
 }
 
