@@ -423,7 +423,7 @@ async function ensureTonConnect() {
     // The user must explicitly choose a wallet from the picker.
     tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
       manifestUrl: TON_MANIFEST_URL,
-      restoreConnection: false,
+      restoreConnection: true,
       uiPreferences: { theme: "DARK" }
     });
     // Telegram Mini App return URL uses the TON Connect TMA return strategy.
