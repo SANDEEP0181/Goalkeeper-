@@ -327,7 +327,7 @@ function updateWalletUI() {
   const address = getWalletAddress();
   const connected = Boolean(address);
 
-  if (connectedWalletChip) connectedWalletChip.hidden = !connected;
+  if (connectedWalletChip) { connectedWalletChip.hidden = true; connectedWalletChip.setAttribute("aria-hidden","true"); }
   setText(connectedWalletAddressEl, connected ? shortAddress(address) : "—");
 
   // Keep the header controls deterministic: when no live TON account exists,
