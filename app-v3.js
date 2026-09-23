@@ -196,7 +196,7 @@ const shareGoalkeeperBtn = $("shareGoalkeeperBtn");
 const TELEGRAM_VALIDATE_URL = "https://sandy-chain-hub.vercel.app/api/telegram/validate";
 const IDENTITY_LINK_URL = "https://sandy-chain-hub.vercel.app/api/identity/link";
 const PROFILE_SESSION_URL = "https://sandy-chain-hub.vercel.app/api/profile/session";
-const TON_MANIFEST_URL = "https://sandeep0181.github.io/SandyChainHub/goalkeeper/tonconnect-manifest.json";
+const TON_MANIFEST_URL = "https://sandeep0181.github.io/Goalkeeper-/tonconnect-manifest.json";
 const TON_TESTNET_EXPLORER = "https://testnet.tonscan.org";
 
 const POINTS_KEY = "goalkeeperPoints";
@@ -441,7 +441,9 @@ async function ensureTonConnect() {
     // Telegram Mini App return URL uses the TON Connect TMA return strategy.
     try {
       tonConnectUI.uiOptions = {
-        twaReturnUrl: "https://t.me/GoalkeeperHubBot"
+        actionsConfiguration: {
+          twaReturnUrl: "https://t.me/GoalkeeperHubBot/goalkeeper"
+        }
       };
     } catch (error) {
       console.warn("TON Connect TMA return strategy:", error);
