@@ -195,3 +195,7 @@ body.light-theme .pro-nav,body.light-theme .pro-command,body.light-theme .pro-gr
   .account-actions .language-select{width:42px!important;min-width:42px!important}
   .account-actions #connectBtn{min-width:78px!important;padding:7px 7px!important;font-size:8px!important}
 }
+
+
+/* Goalkeeper FINAL wallet address placement v1 */
+.connected-wallet-chip{display:none!important}
