@@ -255,8 +255,8 @@ function shortAddress(address) {
 }
 
 function getWalletAddress() {
-  // TON Connect is the only source of truth. All Goalkeeper UI uses the
-  // same friendly UQ/EQ-style address returned by this function.
+  // TON Connect is the source of truth. Do not treat a cached address as
+  // connected; otherwise the Connect button can disappear after a reload.
   const live = tonConnectUI?.account?.address || tonConnectUI?.wallet?.account?.address || "";
   connectedWalletAddress = live;
   return friendlyWalletAddress(live);
