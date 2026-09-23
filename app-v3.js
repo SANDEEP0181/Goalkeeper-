@@ -436,18 +436,12 @@ async function ensureTonConnect() {
     tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
       manifestUrl: TON_MANIFEST_URL,
       restoreConnection: true,
-      uiPreferences: { theme: "DARK" }
+      uiPreferences: { theme: "DARK" },
+      actionsConfiguration: {
+        twaReturnUrl: "https://t.me/GoalkeeperHubBot/goalkeeper"
+      },
+      enableAndroidBackHandler: false
     });
-    // Telegram Mini App return URL uses the TON Connect TMA return strategy.
-    try {
-      tonConnectUI.uiOptions = {
-        actionsConfiguration: {
-          twaReturnUrl: "https://t.me/GoalkeeperHubBot/goalkeeper"
-        }
-      };
-    } catch (error) {
-      console.warn("TON Connect TMA return strategy:", error);
-    }
     // Do not force a network during connection. Keeper does not offer a user-facing network switch,
     // and TON Connect requires the wallet and dApp network to match when a network is requested.
     // Goalkeeper currently uses the wallet only for connection/identity; no transaction is requested.
