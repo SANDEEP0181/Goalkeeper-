@@ -442,6 +442,16 @@ async function ensureTonConnect() {
       },
       enableAndroidBackHandler: false
     });
+
+    // Telegram Mini App return URL: keep both the current actions configuration
+    // and the uiOptions form for compatibility with TON Connect UI v3.x.
+    try {
+      tonConnectUI.uiOptions = {
+        twaReturnUrl: "https://t.me/GoalkeeperHubBot/goalkeeper"
+      };
+    } catch (error) {
+      console.warn("TON Connect TMA return URL:", error);
+    }
     // Do not force a network during connection. Keeper does not offer a user-facing network switch,
     // and TON Connect requires the wallet and dApp network to match when a network is requested.
     // Goalkeeper currently uses the wallet only for connection/identity; no transaction is requested.
@@ -470,7 +480,23 @@ async function ensureTonConnect() {
       }
     });
 
-    connectedWalletAddress = "";
+    if (typeof tonConnectUI.onModalStateChange === "function") {
+      tonConnectUI.onModalStateChange((state) => {
+        if (state?.status === "closed" && !connectedWalletAddress) {
+          const reason = state?.closeReason || "cancelled";
+          setText(walletStatus, "Wallet connection closed: " + reason);
+        }
+      });
+    }
+
+    // Wait until TON Connect finishes restoring any previous session.
+    try {
+      await tonConnectUI.connectionRestored;
+    } catch (error) {
+      console.warn("TON Connect restore:", error);
+    }
+
+    connectedWalletAddress = getWalletAddress();
     updateWalletUI();
     return tonConnectUI;
   } catch (error) {
@@ -494,8 +520,6 @@ async function connectNewWallet() {
   window.GoalkeeperTonProof = null;
 
   try {
-    // Initialize only when the user clicks. This avoids a startup failure
-    // preventing the wallet button from opening the selector.
     const ui = await ensureTonConnect();
     if (!ui) throw new Error("TON Connect SDK unavailable.");
 
@@ -503,24 +527,9 @@ async function connectNewWallet() {
       throw new Error("TON Connect wallet selector is unavailable.");
     }
 
-    if (telegramVerified && telegramInitData && typeof ui.setConnectRequestParameters === "function") {
-      ui.setConnectRequestParameters({ state: "loading" });
-      const proofResponse = await fetch("https://sandy-chain-hub.vercel.app/api/goalkeeper/ton-proof", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData: telegramInitData })
-      });
-      const proofData = await proofResponse.json();
-      if (!proofResponse.ok || !proofData.ok || !proofData.payload) {
-        ui.setConnectRequestParameters(null);
-        throw new Error(proofData.error || "TON proof challenge unavailable");
-      }
-      ui.setConnectRequestParameters({
-        state: "ready",
-        value: { tonProof: proofData.payload }
-      });
-    }
-
+    // Open the wallet selector immediately after the user's click.
+    // Do not perform an async ton_proof request before the wallet redirect:
+    // on mobile/TMA this can interrupt the Tonkeeper return flow.
     await ui.openModal();
   } catch (error) {
     console.error("TON wallet connection error:", error);
@@ -532,6 +541,7 @@ async function connectNewWallet() {
       button.removeAttribute("aria-busy");
     }
   }
+}
 }
 
 window.GoalkeeperConnectWallet=connectNewWallet;
