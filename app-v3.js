@@ -282,16 +282,15 @@ function saveMissions(value) { localStorage.setItem(MISSIONS_KEY, JSON.stringify
 function awardMission(id, points) {
   const missions = getMissions();
   if (missions[id]) return false;
+  if (telegramVerified && window.GoalkeeperBackend?.mission) {
+    const backendId = id === "link" ? "identity" : id;
+    window.GoalkeeperBackend.mission(backendId).then(() => window.GoalkeeperBackend.sync?.()).catch(() => {});
+    return true;
+  }
   const current = Number(localStorage.getItem(POINTS_KEY) || "0");
   localStorage.setItem(POINTS_KEY, String(current + points));
   missions[id] = { completedAt: new Date().toISOString(), points };
   saveMissions(missions);
-  try {
-    if (window.GoalkeeperBackend?.mission) {
-      const backendId = id === "link" ? "identity" : id;
-      window.GoalkeeperBackend.mission(backendId);
-    }
-  } catch {}
   return true;
 }
 
@@ -443,12 +442,22 @@ async function ensureTonConnect() {
       connectedWalletAddress = wallet?.account?.address || "";
       updateWalletUI();
       if (connectedWalletAddress) {
-        awardMission("connect", 10);
-        setText(walletStatus, "Wallet connected");
+        if (window.GoalkeeperBackend?.mission) window.GoalkeeperBackend.mission("connect");
+        const proof = wallet?.connectItems?.tonProof?.proof;
+        if (proof) {
+          window.GoalkeeperTonProof = {
+            proof,
+            publicKey: wallet?.account?.publicKey || "",
+            stateInit: wallet?.account?.walletStateInit || wallet?.account?.stateInit || "",
+            network: wallet?.account?.chain || wallet?.account?.network || "-3"
+          };
+        }
+        setText(walletStatus, proof ? "Wallet connected • ownership proof ready" : "Wallet connected");
         setText(profileActivity, "Session activity: TON wallet connected.");
         try { sessionStorage.setItem("goalkeeperWalletConnected", "1"); } catch {}
         handleWalletReturn();
       } else {
+        window.GoalkeeperTonProof = null;
         setText(walletStatus, "Wallet not connected");
       }
     });
@@ -474,6 +483,7 @@ async function connectNewWallet() {
     button.setAttribute("aria-busy", "true");
   }
   setText(walletStatus, "Opening TON wallet selector...");
+  window.GoalkeeperTonProof = null;
 
   try {
     // Initialize only when the user clicks. This avoids a startup failure
@@ -483,6 +493,24 @@ async function connectNewWallet() {
 
     if (typeof ui.openModal !== "function") {
       throw new Error("TON Connect wallet selector is unavailable.");
+    }
+
+    if (telegramVerified && telegramInitData && typeof ui.setConnectRequestParameters === "function") {
+      ui.setConnectRequestParameters({ state: "loading" });
+      const proofResponse = await fetch("https://sandy-chain-hub.vercel.app/api/goalkeeper/ton-proof", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: telegramInitData })
+      });
+      const proofData = await proofResponse.json();
+      if (!proofResponse.ok || !proofData.ok || !proofData.payload) {
+        ui.setConnectRequestParameters(null);
+        throw new Error(proofData.error || "TON proof challenge unavailable");
+      }
+      ui.setConnectRequestParameters({
+        state: "ready",
+        value: { tonProof: proofData.payload }
+      });
     }
 
     await ui.openModal();
@@ -515,12 +543,12 @@ function bindWalletButtons() {
 function updateProfileWallet() {
   const address = getWalletAddress();
   setText(profileWallet, address ? address : "Not connected");
-  setText(profileLinkStatus, localStorage.getItem("goalkeeperIdentityLink") ? "Identity Linked" : "Not linked");
+  setText(profileLinkStatus, getMissions().link ? "Identity Linked" : "Not linked");
 }
 
 function updateIdentityState() {
   const connected = Boolean(getWalletAddress());
-  const linked = Boolean(localStorage.getItem("goalkeeperIdentityLink"));
+  const linked = Boolean(getMissions().link);
 
   if (telegramVerified && connected) {
     if (linkWalletBtn) linkWalletBtn.disabled = linked;
@@ -623,18 +651,35 @@ async function loadProfileSession() {
 
 async function linkWalletIdentity() {
   const wallet = getWalletAddress();
-  if (!telegramVerified || !telegramInitData || !wallet) { updateIdentityState(); return; }
+  const proofBundle = window.GoalkeeperTonProof;
+  if (!telegramVerified || !telegramInitData || !wallet || !proofBundle?.proof) {
+    setText(identityStatus, "Ownership proof required");
+    setText(identityMessage, "Reconnect your TON wallet so Goalkeeper can verify wallet ownership.");
+    updateIdentityState();
+    return;
+  }
   if (linkWalletBtn) linkWalletBtn.disabled = true;
-  setText(identityStatus, "Linking...");
-  setText(identityMessage, "Preparing secure identity link...");
+  setText(identityStatus, "Verifying TON ownership...");
+  setText(identityMessage, "Checking wallet ownership securely...");
   try {
-    const response = await fetch(IDENTITY_LINK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: telegramInitData, walletAddress: wallet }) });
+    const response = await fetch(IDENTITY_LINK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        initData: telegramInitData,
+        walletAddress: wallet,
+        tonProof: proofBundle.proof,
+        publicKey: proofBundle.publicKey,
+        stateInit: proofBundle.stateInit,
+        network: proofBundle.network
+      })
+    });
     const result = await response.json();
     if (!response.ok || !result.ok) throw new Error(result.error || "Identity link failed");
-    localStorage.setItem("goalkeeperIdentityLink", result.linkToken);
-    awardMission("link", 15);
+    // Identity-link tokens are never persisted in browser storage. The server is authoritative.
+    
     setText(identityStatus, "Identity Linked");
-    setText(identityMessage, "Telegram identity and TON wallet are linked for this session.");
+    setText(identityMessage, "Telegram identity and TON wallet ownership verified.");
     setText(profileLinkStatus, "Identity Linked");
     setText(profileActivity, "Session activity: Telegram + TON wallet linked.");
     updateRewards();
@@ -693,7 +738,7 @@ function updateCheckinTimer(){
 
 function getCurrentPoints(){
   try {
-    const raw = localStorage.getItem(POINTS_KEY);
+    const raw = localStorage.getItem("goalkeeperServerPoints") ?? localStorage.getItem(POINTS_KEY);
     if (raw !== null) return Number(raw) || 0;
     const text = document.getElementById("pointsTotal")?.textContent || "0";
     return Number(text.match(/\d+/)?.[0] || 0);
@@ -701,10 +746,10 @@ function getCurrentPoints(){
 }
 
 function updateRewards(){
-  const opened=getMissions(); if(!opened.open)awardMission("open",5);
+  const opened=getMissions(); if(!opened.open && telegramVerified && window.GoalkeeperBackend?.mission){ window.GoalkeeperBackend.mission("open"); }
   const points=getCurrentPoints(); const checked=localStorage.getItem(CHECKIN_KEY)===todayKey();
   setText(pointsTotal,points+" Points"); setText(rewardPoints,points+" Points"); updateLevel(points); updateStreakUI();
-  setText(missionTelegram,telegramVerified?"Verified":"Pending"); setText(missionWallet,getWalletAddress()?"Connected":"Pending"); setText(missionIdentity,localStorage.getItem("goalkeeperIdentityLink")?"Linked":"Pending"); setText(missionCheckin,checked?"Completed today":"Available");
+  setText(missionTelegram,telegramVerified?"Verified":"Pending"); setText(missionWallet,getWalletAddress()?"Connected":"Pending"); setText(missionIdentity,getMissions().link?"Linked":"Pending"); setText(missionCheckin,checked?"Completed today":"Available");
   updateCheckinTimer(); updateMissionUI(); updateAchievements();
   setText(pointsMessage,checked?"Today's testnet check-in is complete.":"Browser mode: daily testnet check-in is available. Telegram verification is optional.");
 }
@@ -753,7 +798,7 @@ async function handleDailyCheckin(){
 
 async function logoutSession(){
   try{if(tonConnectUI)await tonConnectUI.disconnect();}catch(error){console.warn("Wallet disconnect:",error);}
-  telegramInitData=""; telegramVerified=false; connectedWalletAddress=""; localStorage.removeItem("goalkeeperIdentityLink");
+  telegramInitData=""; telegramVerified=false; connectedWalletAddress="";
   setText(telegramStatus,"Logged out"); setText(telegramUser,"Telegram session cleared. Open Goalkeeper from Telegram to log in again."); setText(profileStatus,"Profile pending"); setText(profileIdentity,"Complete Telegram verification to create your secure profile."); setText(goalkeeperUserId,"—"); setText(profileTelegram,"—"); setText(profileWallet,"Not connected"); setText(profileLinkStatus,"—"); setText(profileActivity,"Waiting");
   updateAuthButtons(); updateWalletUI(); updateRewards();
 }
@@ -769,8 +814,6 @@ async function disconnectWallet(){
 
     // Wallet disconnect must not erase the user's testnet points,
     // daily check-in, streak, or mission history.
-    localStorage.removeItem("goalkeeperIdentityLink");
-
     setText(profileWallet,"Not connected");
     setText(profileLinkStatus,"—");
     setText(profileActivity,"Session activity: Wallet disconnected.");
