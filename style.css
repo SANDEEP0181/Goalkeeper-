@@ -163,3 +163,15 @@ body{background:#f7fff9!important;color:#173323!important}
 .progress-track{background:rgba(25,105,58,.09)!important}
 .progress-track i{background:linear-gradient(90deg,#2fb765,#8be0aa)!important}
 body.light-theme .pro-nav,body.light-theme .pro-command,body.light-theme .pro-grid .card{background:#fff!important;color:#173323!important}
+
+/* Goalkeeper UI polish v20260923 */
+.account-actions{display:flex;align-items:center;gap:7px}
+.account-actions .theme-toggle{min-width:54px;width:auto;height:34px;min-height:34px;padding:6px 9px!important;border-radius:9px;font-size:10px;gap:4px}
+.account-actions .theme-toggle span:first-child{font-size:12px;line-height:1}
+.account-actions .theme-toggle span:last-child{font-size:9px;font-weight:800}
+.connected-wallet-chip{display:flex;align-items:center;gap:8px;min-width:142px;max-width:210px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.035);overflow:hidden}
+.connected-wallet-chip>span:last-child{min-width:0;display:flex;flex-direction:column}
+.connected-wallet-chip small{display:block;color:var(--muted);font-size:7px;font-weight:900;letter-spacing:.1em}
+.connected-wallet-chip strong{display:block;margin-top:2px;color:var(--text);font:800 9px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wallet-live-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+@media(max-width:700px){.account-actions{grid-template-columns:auto minmax(0,1fr) auto;display:grid;align-items:center}.account-actions .theme-toggle{width:54px;min-width:54px}.account-actions .language-select{width:100%;min-width:0}.account-actions .primary.compact,.account-actions .secondary.compact{min-height:34px;padding:7px 9px;font-size:9px}.connected-wallet-chip{max-width:none}}
