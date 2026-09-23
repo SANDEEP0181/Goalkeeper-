@@ -144,3 +144,22 @@ body.light-theme .event-days span,body.light-theme .event-mission{background:rgb
   .account-actions #connectBtn,.account-actions #disconnectBtn{display:none}
 }
 @media(max-width:380px){.brand small{display:none}.brand strong{font-size:14px}.language-select{width:48px;min-width:48px}}
+
+/* FINAL GOALKEEPER LIGHT GREEN WHITE OVERRIDE */
+:root{--bg:#f7fff9;--panel:#fff;--panel2:#effaf3;--line:rgba(25,105,58,.15);--muted:#668071;--text:#173323;--accent:#2fb765;--accent2:#8be0aa;--green:#22a35b}
+body{background:#f7fff9!important;color:#173323!important}
+.card,.stats>div,.pro-nav,.pro-command,.pro-grid .card,.dashboard-grid>.card{background:#fff!important;color:#173323!important;border-color:rgba(25,105,58,.14)!important}
+.hero{background:linear-gradient(135deg,#dcf8e5,#fff 60%,#effcf3)!important}
+.primary{background:linear-gradient(135deg,#48c978,#21a95b)!important;color:#fff!important}
+.secondary,.language-select{background:#fff!important;color:#214d32!important;border-color:rgba(25,105,58,.18)!important}
+.pro-nav-item{color:#557363!important}
+.pro-nav-item.active{background:#e3f8e9!important;color:#178b4b!important}
+.bottom-nav{background:rgba(255,255,255,.97)!important;border-color:rgba(25,105,58,.16)!important}
+.bottom-nav button,.bottom-nav a{color:#557363!important}
+.bottom-nav button.active,.bottom-nav a.active{background:#e3f8e9!important;color:#178b4b!important}
+.hero h1 em,.reward-number{background:linear-gradient(90deg,#173323,#25a95d)!important;background-clip:text!important;-webkit-background-clip:text!important;color:transparent!important}
+.hero p,.card p{color:#557363!important}
+.stats small,.profile-grid small,.mission small,.badge-row small,.section-head>div>span,.card-top>span,.roadmap>div>span{color:#5d7969!important}
+.progress-track{background:rgba(25,105,58,.09)!important}
+.progress-track i{background:linear-gradient(90deg,#2fb765,#8be0aa)!important}
+body.light-theme .pro-nav,body.light-theme .pro-command,body.light-theme .pro-grid .card{background:#fff!important;color:#173323!important}
