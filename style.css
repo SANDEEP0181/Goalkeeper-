@@ -175,3 +175,22 @@ body.light-theme .pro-nav,body.light-theme .pro-command,body.light-theme .pro-gr
 .connected-wallet-chip strong{display:block;margin-top:2px;color:var(--text);font:800 9px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wallet-live-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
 @media(max-width:700px){.account-actions{grid-template-columns:auto minmax(0,1fr) auto;display:grid;align-items:center}.account-actions .theme-toggle{width:54px;min-width:54px}.account-actions .language-select{width:100%;min-width:0}.account-actions .primary.compact,.account-actions .secondary.compact{min-height:34px;padding:7px 9px;font-size:9px}.connected-wallet-chip{max-width:none}}
+
+
+/* Goalkeeper Mobile Header Fix v20260923-2 */
+@media(max-width:520px){
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:nowrap}
+  .brand{flex:1 1 auto;min-width:0}
+  .account-actions{display:flex!important;align-items:center;justify-content:flex-end;flex:0 0 auto;flex-wrap:nowrap;gap:5px}
+  .account-actions .theme-toggle{display:inline-flex!important;width:34px!important;min-width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;justify-content:center;border-radius:9px}
+  .account-actions .theme-toggle #themeLabel{display:none!important}
+  .account-actions .theme-toggle #themeIcon{font-size:14px}
+  .account-actions .language-select{display:block!important;width:46px!important;min-width:46px!important;height:34px!important;padding:0 3px!important;border-radius:9px;font-size:9px}
+  .account-actions #connectBtn{display:inline-flex!important;visibility:visible!important;opacity:1!important;width:auto!important;min-width:86px!important;height:34px!important;min-height:34px!important;padding:7px 9px!important;border-radius:9px;font-size:9px!important;white-space:nowrap}
+  .account-actions #disconnectBtn{display:none!important}
+}
+@media(max-width:380px){
+  .account-actions{gap:4px}
+  .account-actions .language-select{width:42px!important;min-width:42px!important}
+  .account-actions #connectBtn{min-width:78px!important;padding:7px 7px!important;font-size:8px!important}
+}
