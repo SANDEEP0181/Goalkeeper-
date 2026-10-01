@@ -199,3 +199,7 @@ body.light-theme .pro-nav,body.light-theme .pro-command,body.light-theme .pro-gr
 
 /* Goalkeeper FINAL wallet address placement v1 */
 .connected-wallet-chip{display:none!important}
+
+
+/* InterLink integration card */
+.interlink-card{position:relative;overflow:hidden}.interlink-card .feature-note{display:block;margin-top:10px}.interlink-card button:disabled{opacity:.65;cursor:not-allowed}
