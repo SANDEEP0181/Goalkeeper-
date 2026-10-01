@@ -99,6 +99,7 @@
     <section class="section" id="referral-stats"><div class="section-head"><div><span>COMMUNITY GROWTH</span><h2>Referral Stats</h2></div><span class="live-label">LIVE</span></div><article class="card referral-stats-card"><div class="referral-stat-grid"><div><small>INVITES</small><strong id="referralCount">0</strong><span>successful referrals</span></div><div><small>BONUS XP</small><strong id="referralBonus">0</strong><span>testnet points earned</span></div><div><small>STATUS</small><strong id="referralActivity">Ready</strong><span id="referralActivityNote">Share your invite URL</span></div></div><div class="referral-stats-actions"><button id="referralShareBtn" class="primary" type="button" onclick="window.GoalkeeperShareInvite&&window.GoalkeeperShareInvite()">Share Invite</button><button id="referralCopyBtn" class="secondary" type="button" onclick="window.GoalkeeperCopyInvite&&window.GoalkeeperCopyInvite()">Copy Invite Link</button></div></article></section>
     <section class="section" id="notifications"><div class="section-head"><div><span>ACTIVITY</span><h2>Notifications</h2></div><button id="clearNotificationsBtn" class="secondary compact" type="button">Clear</button></div><article class="card notifications-card"><div id="notificationList" class="notification-list"><div class="empty-notification">No new activity yet.</div></div></article></section>
 
+    <section class="section" id="interlink"><div class="section-head"><div><span>ECOSYSTEM INTEGRATION</span><h2>InterLink</h2></div><span class="live-label">READY LAYER</span></div><article class="card identity-card interlink-card"><div class="card-top"><span>INTERLINK IDENTITY</span><span class="shield">◆</span></div><h3 id="interlinkStatus">Integration not configured</h3><p>Optional InterLink integration layer. Goalkeeper continues to work independently with TON and Telegram.</p><button id="interlinkConnectBtn" class="primary full" type="button" disabled>InterLink — Coming Soon</button><small class="feature-note">No $ITL transaction, payment, or token reward is enabled.</small></article></section>
     <section class="section" id="support">
       <article class="card support-card"><div class="card-top"><span>SUPPORT</span><span class="shield">?</span></div><h3>Support</h3><div class="support-actions"><a class="support-button support-link" href="https://t.me/GoalkeeperHubBot" target="_blank" rel="noopener noreferrer">Telegram</a><a class="support-button support-link" href="mailto:sandyvibe1982@gmail.com">Mail</a></div></article>
     </section>
@@ -114,6 +115,10 @@
   <button type="button" data-gk-bottom="profile">◉<small>Profile</small></button>
 </nav>
     <script src="backend-sync.js?v=20260920-redis1"></script>
+    <script src="interlink/interlink-config.js?v=1"></script>
+    <script src="interlink/interlink-auth.js?v=1"></script>
+    <script src="interlink/interlink-adapter.js?v=1"></script>
+    <script src="interlink/interlink-ui.js?v=1"></script>
   <script defer src="app-v3.js?v=20260923-gkwallet3"></script>
   <script defer src="pro-dashboard.js?v=20260923-pro5"></script>
 <script src="genesis-nft.js" defer></script>
@@ -126,12 +131,12 @@
     events:["events"],
     team:["team-screen","leaderboard","referral-stats"],
     wallet:["wallet-screen"],
-    profile:["profile","genesis-nft","collection-achievements","settings","notifications","support"]
+    profile:["profile","genesis-nft","collection-achievements","settings","notifications","support","interlink"]
   };
   const all=[
     "#home",".quick-start",".level-card",".streak-strip","#overview",".pro-grid",".stats",
     "#profile","#missions","#genesis-nft","#events",".dashboard-grid","#collection-achievements",
-    "#team-screen","#leaderboard","#settings","#referral-stats","#notifications","#support",".roadmap","footer"
+    "#team-screen","#leaderboard","#settings","#referral-stats","#notifications","#support","#interlink",".roadmap","footer"
   ];
   function get(sel){return document.querySelector(sel)}
   function setVisible(el,on){
