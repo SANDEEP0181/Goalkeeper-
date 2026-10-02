@@ -37,7 +37,7 @@
     missions: ["missions"],
     events: ["events"],
     team: ["team-screen", "leaderboard", "referral-stats"],
-    wallet: ["wallet-screen"],
+    wallet: ["wallet"],
     profile: ["profile", "genesis-nft", "collection-achievements", "settings", "notifications", "support"]
   };
 
@@ -65,7 +65,7 @@
 
     const grid = document.querySelector(".dashboard-grid");
     if (grid) {
-      grid.setAttribute("data-gk-section", "wallet-screen");
+      grid.setAttribute("data-gk-section", "wallet");
       grid.querySelector(".wallet-card")?.setAttribute("data-gk-wallet-card", "1");
       grid.querySelector(".telegram-card")?.setAttribute("data-gk-profile-card", "1");
       grid.querySelector(".identity-card")?.setAttribute("data-gk-wallet-card", "1");
