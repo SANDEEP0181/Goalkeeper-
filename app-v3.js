@@ -340,11 +340,12 @@ function updateWalletUI() {
     if (connected) {
       connectBtn.hidden = true;
       connectBtn.setAttribute("aria-hidden", "true");
+      connectBtn.style.setProperty("display", "none", "important");
     } else {
       connectBtn.hidden = false;
       connectBtn.removeAttribute("hidden");
       connectBtn.removeAttribute("aria-hidden");
-      connectBtn.style.removeProperty("display");
+      connectBtn.style.setProperty("display", "inline-flex", "important");
     }
   }
   if (disconnectBtn) disconnectBtn.hidden = !connected;
