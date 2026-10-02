@@ -372,9 +372,11 @@ function updateWalletUI() {
 
 function syncHeaderWalletControls() {
   try {
-    const connected = Boolean(getWalletAddress()) ||
-      Boolean(disconnectWalletBtn && !disconnectWalletBtn.hidden) ||
-      Boolean(disconnectBtn && !disconnectBtn.hidden);
+    const connected = Boolean(
+      tonConnectUI?.wallet?.account?.address ||
+      tonConnectUI?.account?.address ||
+      connectedWalletAddress
+    );
 
     if (connectBtn) {
       connectBtn.hidden = connected;
@@ -385,7 +387,7 @@ function syncHeaderWalletControls() {
     if (disconnectBtn) {
       disconnectBtn.hidden = !connected;
       if (connected) disconnectBtn.style.setProperty("display", "inline-flex", "important");
-      else disconnectBtn.style.removeProperty("display");
+      else disconnectBtn.style.setProperty("display", "none", "important");
     }
   } catch (error) {
     console.warn("Goalkeeper header wallet sync:", error);
@@ -572,23 +574,34 @@ async function ensureTonConnect() {
 
 window.addEventListener("error",(event)=>{
   try {
-    // Cross-origin SDKs (Telegram/TON Connect/CDNs) can only report the generic
-    // "Script error." message. Do not overwrite the real wallet state with it.
-    const message=String(event?.message||"");
-    if(message==="Script error." || message==="Script error") return;
+    // TON Connect/Tonkeeper and Telegram can emit cross-origin browser errors
+    // that are not actionable to the dApp. Never replace a valid wallet state
+    // with a generic "Script error." message.
+    const message=String(event?.message||"").trim();
+    if(!message || message==="Script error." || message==="Script error") return;
+    if (getWalletAddress()) {
+      console.warn("Goalkeeper external/runtime error while wallet is connected:", message);
+      return;
+    }
     const el=document.getElementById("walletStatus");
     if(el&&!el.dataset.gkErrorShown){
       el.dataset.gkErrorShown="1";
-      el.textContent="Goalkeeper JS error: "+(message||"Unknown error");
+      el.textContent="Goalkeeper JS error: "+message;
     }
   }catch{}
 });
 window.addEventListener("unhandledrejection",(event)=>{
   try{
+    const message=String(event?.reason?.message||event?.reason||"").trim();
+    if(!message) return;
+    if (getWalletAddress()) {
+      console.warn("Goalkeeper external/runtime rejection while wallet is connected:", message);
+      return;
+    }
     const el=document.getElementById("walletStatus");
     if(el&&!el.dataset.gkErrorShown){
       el.dataset.gkErrorShown="1";
-      el.textContent="Goalkeeper error: "+(event?.reason?.message||String(event?.reason||"Unknown error"));
+      el.textContent="Goalkeeper error: "+message;
     }
   }catch{}
 });
