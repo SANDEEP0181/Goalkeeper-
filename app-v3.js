@@ -255,11 +255,14 @@ function shortAddress(address) {
 }
 
 function getWalletAddress() {
-  // TON Connect is the source of truth. Do not treat a cached address as
-  // connected; otherwise the Connect button can disappear after a reload.
+  // TON Connect's status event is authoritative in Telegram Mini Apps.
+  // Keep the event-provided account during the Tonkeeper -> TMA return flow;
+  // some TON Connect UI versions do not expose account on the same object
+  // immediately after the redirect.
   const live = tonConnectUI?.account?.address || tonConnectUI?.wallet?.account?.address || "";
-  connectedWalletAddress = live;
-  return friendlyWalletAddress(live);
+  const address = live || connectedWalletAddress || "";
+  if (live) connectedWalletAddress = live;
+  return friendlyWalletAddress(address);
 }
 
 function todayKey() {
@@ -311,7 +314,8 @@ async function handleWalletReturn() {
     const ui = tonConnectUI || await ensureTonConnect();
     if (ui) {
       try { await ui.connectionRestored; } catch {}
-      connectedWalletAddress = ui.account?.address || ui.wallet?.account?.address || "";
+      const restoredAddress = ui.account?.address || ui.wallet?.account?.address || "";
+      if (restoredAddress) connectedWalletAddress = restoredAddress;
       updateWalletUI();
     }
   } catch (error) {
@@ -496,7 +500,8 @@ async function ensureTonConnect() {
       console.warn("TON Connect restore:", error);
     }
 
-    connectedWalletAddress = getWalletAddress();
+    const restoredAddress = tonConnectUI.account?.address || tonConnectUI.wallet?.account?.address || connectedWalletAddress || "";
+    if (restoredAddress) connectedWalletAddress = restoredAddress;
     updateWalletUI();
     return tonConnectUI;
   } catch (error) {
