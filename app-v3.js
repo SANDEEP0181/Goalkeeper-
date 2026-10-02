@@ -372,7 +372,12 @@ function updateWalletUI() {
 
 function syncHeaderWalletControls() {
   try {
-    const connected = Boolean(getWalletAddress());
+    // Use the same state that the wallet card visibly renders, with TON Connect
+    // and the persisted address as additional signals. This prevents a stale
+    // header button from contradicting an already-connected wallet card.
+    const statusText = String(walletStatus?.textContent || "").trim().toLowerCase();
+    const cardSaysConnected = statusText === "wallet connected";
+    const connected = Boolean(getWalletAddress()) || cardSaysConnected;
 
     if (connectBtn) {
       connectBtn.hidden = connected;
@@ -385,6 +390,7 @@ function syncHeaderWalletControls() {
       disconnectBtn.hidden = !connected;
       disconnectBtn.setAttribute("aria-hidden", connected ? "false" : "true");
       disconnectBtn.style.setProperty("display", connected ? "inline-flex" : "none", "important");
+      disconnectBtn.disabled = !connected;
     }
   } catch (error) {
     console.warn("Goalkeeper header wallet sync:", error);
