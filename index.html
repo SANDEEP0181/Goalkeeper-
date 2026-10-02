@@ -187,5 +187,36 @@
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
 </script>
+<script>
+(function(){
+  "use strict";
+  // Final UI guard: keep the header controls consistent with the wallet card.
+  function syncGoalkeeperHeaderWallet(){
+    try{
+      var connect=document.getElementById("connectBtn");
+      var disconnect=document.getElementById("disconnectBtn");
+      var status=document.getElementById("walletStatus");
+      if(!connect || !disconnect || !status) return;
+      var text=String(status.textContent||"").trim().toLowerCase();
+      var connected=(text==="wallet connected");
+      connect.hidden=connected;
+      connect.setAttribute("aria-hidden",connected?"true":"false");
+      connect.style.setProperty("display",connected?"none":"inline-flex","important");
+      connect.disabled=connected;
+      disconnect.hidden=!connected;
+      disconnect.setAttribute("aria-hidden",connected?"false":"true");
+      disconnect.style.setProperty("display",connected?"inline-flex":"none","important");
+      disconnect.disabled=!connected;
+    }catch(e){}
+  }
+  syncGoalkeeperHeaderWallet();
+  setInterval(syncGoalkeeperHeaderWallet,500);
+  window.addEventListener("pageshow",function(){setTimeout(syncGoalkeeperHeaderWallet,100);});
+  window.addEventListener("focus",function(){setTimeout(syncGoalkeeperHeaderWallet,100);});
+  document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="visible") setTimeout(syncGoalkeeperHeaderWallet,100);
+  });
+})();
+</script>
 </body>
 </html>
