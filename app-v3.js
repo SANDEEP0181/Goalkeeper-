@@ -363,6 +363,30 @@ function updateWalletUI() {
   setText(profileWallet, connected ? shortAddress(address) : "Not connected");
   updateIdentityState();
   updateRewards();
+  // Final header sync after every wallet UI render.
+  syncHeaderWalletControls();
+}
+
+function syncHeaderWalletControls() {
+  try {
+    const connected = Boolean(getWalletAddress()) ||
+      Boolean(disconnectWalletBtn && !disconnectWalletBtn.hidden) ||
+      Boolean(disconnectBtn && !disconnectBtn.hidden);
+
+    if (connectBtn) {
+      connectBtn.hidden = connected;
+      connectBtn.setAttribute("aria-hidden", connected ? "true" : "false");
+      connectBtn.style.setProperty("display", connected ? "none" : "inline-flex", "important");
+    }
+
+    if (disconnectBtn) {
+      disconnectBtn.hidden = !connected;
+      if (connected) disconnectBtn.style.setProperty("display", "inline-flex", "important");
+      else disconnectBtn.style.removeProperty("display");
+    }
+  } catch (error) {
+    console.warn("Goalkeeper header wallet sync:", error);
+  }
 }
 
 async function loadTonConnectLibrary() {
@@ -513,8 +537,37 @@ async function ensureTonConnect() {
   }
 }
 
-window.addEventListener("error",(event)=>{try{const el=document.getElementById("walletStatus");if(el&&!el.dataset.gkErrorShown){el.dataset.gkErrorShown="1";el.textContent="Goalkeeper JS error: "+(event?.message||"Unknown error");}}catch{}});
-window.addEventListener("unhandledrejection",(event)=>{try{const el=document.getElementById("walletStatus");if(el&&!el.dataset.gkErrorShown){el.dataset.gkErrorShown="1";el.textContent="Goalkeeper error: "+(event?.reason?.message||String(event?.reason||"Unknown error"));}}catch{}});
+window.addEventListener("error",(event)=>{
+  try {
+    // Cross-origin SDKs (Telegram/TON Connect/CDNs) can only report the generic
+    // "Script error." message. Do not overwrite the real wallet state with it.
+    const message=String(event?.message||"");
+    if(message==="Script error." || message==="Script error") return;
+    const el=document.getElementById("walletStatus");
+    if(el&&!el.dataset.gkErrorShown){
+      el.dataset.gkErrorShown="1";
+      el.textContent="Goalkeeper JS error: "+(message||"Unknown error");
+    }
+  }catch{}
+});
+window.addEventListener("unhandledrejection",(event)=>{
+  try{
+    const el=document.getElementById("walletStatus");
+    if(el&&!el.dataset.gkErrorShown){
+      el.dataset.gkErrorShown="1";
+      el.textContent="Goalkeeper error: "+(event?.reason?.message||String(event?.reason||"Unknown error"));
+    }
+  }catch{}
+});
+
+// Telegram/Tonkeeper can return focus/pageshow without firing a TON Connect
+// status event again. Re-sync the header whenever the Mini App becomes visible.
+window.addEventListener("pageshow",()=>setTimeout(syncHeaderWalletControls,250));
+window.addEventListener("focus",()=>setTimeout(syncHeaderWalletControls,250));
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible") setTimeout(syncHeaderWalletControls,250);
+});
+setInterval(syncHeaderWalletControls,1000);
 
 async function connectNewWallet() {
   const button = connectBtn;
