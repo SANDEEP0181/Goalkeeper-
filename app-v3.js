@@ -542,7 +542,6 @@ async function connectNewWallet() {
     }
   }
 }
-}
 
 window.GoalkeeperConnectWallet=connectNewWallet;
 window.GoalkeeperDailyCheckin=handleDailyCheckin;
