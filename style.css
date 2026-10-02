@@ -208,3 +208,7 @@ body.light-theme .pro-nav,body.light-theme .pro-command,body.light-theme .pro-gr
 /* Wallet connected-state hard fix: hidden must override mobile header display rules. */
 .account-actions #connectBtn[hidden]{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 .account-actions #disconnectBtn[hidden]{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+
+/* Final connected-state guard: the wallet card is authoritative for the header CTA. */
+body:has(#disconnectWalletBtn:not([hidden])) #connectBtn{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+body:has(#disconnectWalletBtn:not([hidden])) #disconnectBtn{display:inline-flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
