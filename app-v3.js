@@ -211,6 +211,9 @@ let tonConnectLoading = null;
 let telegramInitData = "";
 let telegramVerified = false;
 let connectedWalletAddress = "";
+let walletRestoreInProgress = false;
+let walletRestoreFinished = false;
+const LAST_WALLET_KEY = "goalkeeperLastWalletAddress";
 
 function setText(el, value) { if (el) el.textContent = translate(value); }
 
@@ -485,9 +488,22 @@ async function ensureTonConnect() {
     // and TON Connect requires the wallet and dApp network to match when a network is requested.
     // Goalkeeper currently uses the wallet only for connection/identity; no transaction is requested.
     tonConnectUI.onStatusChange((wallet) => {
-      // Wallet switch/connect/disconnect events are authoritative.
-      connectedWalletAddress = wallet?.account?.address || "";
-      updateWalletUI();
+      // During startup TON Connect can emit an initial null status before the
+      // connectionRestored promise finishes. Do not mistake that transient
+      // state for a real disconnect.
+      const liveAddress = wallet?.account?.address || tonConnectUI?.wallet?.account?.address || "";
+      if (liveAddress) {
+        connectedWalletAddress = liveAddress;
+        walletRestoreFinished = true;
+        try { localStorage.setItem(LAST_WALLET_KEY, liveAddress); } catch {}
+        updateWalletUI();
+      } else if (!walletRestoreInProgress || walletRestoreFinished) {
+        connectedWalletAddress = "";
+        try { localStorage.removeItem(LAST_WALLET_KEY); } catch {}
+        updateWalletUI();
+      } else {
+        setText(walletStatus, "Restoring TON wallet session...");
+      }
       if (connectedWalletAddress) {
         if (window.GoalkeeperBackend?.mission) window.GoalkeeperBackend.mission("connect");
         const proof = wallet?.connectItems?.tonProof?.proof;
@@ -518,15 +534,32 @@ async function ensureTonConnect() {
       });
     }
 
-    // Wait until TON Connect finishes restoring any previous session.
+    // Wait for the SDK's actual restore result before declaring the wallet
+    // disconnected. TON Connect documents that connectionRestored resolves
+    // after onStatusChange, so this is the authoritative startup boundary.
+    walletRestoreInProgress = true;
+    walletRestoreFinished = false;
+    let restored = false;
     try {
-      await tonConnectUI.connectionRestored;
+      restored = await tonConnectUI.connectionRestored;
     } catch (error) {
       console.warn("TON Connect restore:", error);
     }
+    walletRestoreInProgress = false;
+    walletRestoreFinished = true;
 
-    const restoredAddress = tonConnectUI.account?.address || tonConnectUI.wallet?.account?.address || connectedWalletAddress || "";
-    if (restoredAddress) connectedWalletAddress = restoredAddress;
+    const restoredAddress =
+      tonConnectUI.wallet?.account?.address ||
+      tonConnectUI.account?.address ||
+      connectedWalletAddress ||
+      "";
+    if (restoredAddress) {
+      connectedWalletAddress = restoredAddress;
+      try { localStorage.setItem(LAST_WALLET_KEY, restoredAddress); } catch {}
+    } else if (!restored) {
+      connectedWalletAddress = "";
+      try { localStorage.removeItem(LAST_WALLET_KEY); } catch {}
+    }
     updateWalletUI();
     return tonConnectUI;
   } catch (error) {
@@ -884,6 +917,10 @@ async function disconnectWallet(){
     const ui=await ensureTonConnect();
     if(ui)await ui.disconnect();
 
+    walletRestoreInProgress = false;
+    walletRestoreFinished = true;
+    try { localStorage.removeItem(LAST_WALLET_KEY); } catch {}
+
     // Clear every in-memory wallet reference immediately. The next connect
     // must come only from TON Connect's new onStatusChange event.
     connectedWalletAddress="";
@@ -936,20 +973,29 @@ applyLanguage(localStorage.getItem(LANGUAGE_KEY) || "en");
 window.addEventListener("load",()=>{
   initTelegram().catch((error)=>console.error("Telegram startup:",error));
 
-  // Restore the existing TON Connect session on every page reload.
-  // Without this startup restore, connectedWalletAddress is empty until the
-  // user presses Connect again, which makes the header/card look disconnected.
+  // Restore the existing TON Connect session on every reload. The restore
+  // guard prevents the SDK's initial null status from clearing the UI before
+  // connectionRestored has finished.
   setTimeout(async()=>{
+    walletRestoreInProgress = true;
+    walletRestoreFinished = false;
     try{
       const ui=await ensureTonConnect();
       if(ui){
         try{await ui.connectionRestored;}catch{}
-        const restored=ui.account?.address||ui.wallet?.account?.address||connectedWalletAddress||"";
-        if(restored) connectedWalletAddress=restored;
+        const restored=ui.wallet?.account?.address||ui.account?.address||connectedWalletAddress||"";
+        if(restored){
+          connectedWalletAddress=restored;
+          try{localStorage.setItem(LAST_WALLET_KEY,restored);}catch{}
+        }
         updateWalletUI();
       }
     }catch(error){
       console.warn("TON wallet startup restore:",error);
+      updateWalletUI();
+    }finally{
+      walletRestoreInProgress = false;
+      walletRestoreFinished = true;
       updateWalletUI();
     }
   },150);
