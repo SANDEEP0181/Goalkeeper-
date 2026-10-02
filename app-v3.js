@@ -577,35 +577,16 @@ async function ensureTonConnect() {
 
 window.addEventListener("error",(event)=>{
   try {
-    // TON Connect/Tonkeeper and Telegram can emit cross-origin browser errors
-    // that are not actionable to the dApp. Never replace a valid wallet state
-    // with a generic "Script error." message.
     const message=String(event?.message||"").trim();
-    if(!message || message==="Script error." || message==="Script error") return;
-    if (getWalletAddress()) {
-      console.warn("Goalkeeper external/runtime error while wallet is connected:", message);
-      return;
-    }
-    const el=document.getElementById("walletStatus");
-    if(el&&!el.dataset.gkErrorShown){
-      el.dataset.gkErrorShown="1";
-      el.textContent="Goalkeeper JS error: "+message;
-    }
+    if(message) console.warn("Goalkeeper runtime error:", message);
+    // Runtime errors from Telegram/Tonkeeper must never overwrite walletStatus.
   }catch{}
 });
 window.addEventListener("unhandledrejection",(event)=>{
-  try{
+  try {
     const message=String(event?.reason?.message||event?.reason||"").trim();
-    if(!message) return;
-    if (getWalletAddress()) {
-      console.warn("Goalkeeper external/runtime rejection while wallet is connected:", message);
-      return;
-    }
-    const el=document.getElementById("walletStatus");
-    if(el&&!el.dataset.gkErrorShown){
-      el.dataset.gkErrorShown="1";
-      el.textContent="Goalkeeper error: "+message;
-    }
+    if(message) console.warn("Goalkeeper runtime rejection:", message);
+    // Wallet status is controlled only by TON Connect state.
   }catch{}
 });
 
