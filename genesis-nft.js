@@ -1,4 +1,4 @@
-/* Goalkeeper Genesis Keeper NFT claim preview — testnet only */
+/* Goalkeeper Genesis Keeper NFT eligibility — testnet only; 30-day streak required. */
 (function(){
   const ENDPOINT="https://sandy-chain-hub.vercel.app/api/goalkeeper/event";
   const STATUS_ID="genesisNftStatus", BTN_ID="genesisNftClaimBtn";
@@ -25,7 +25,7 @@
     try{
       const r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData:i,action:"badge"})});
       const j=await r.json();
-      if(!j.ok||!j.eligible)return set("Server verification did not confirm eligibility yet.","TRY AGAIN",false);
+      if(!j.ok||!j.eligible)return set("Server verification did not confirm a 30-day Keeper Streak yet.","TRY AGAIN",false);
       localStorage.setItem(ELIGIBLE_KEY,"1");
       if(j.claimed)localStorage.setItem(BADGE_KEY,"1");
       localStorage.setItem(VERIFY_KEY,new Date().toISOString());
