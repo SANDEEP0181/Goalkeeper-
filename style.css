@@ -203,3 +203,8 @@ body.light-theme .pro-nav,body.light-theme .pro-command,body.light-theme .pro-gr
 
 /* InterLink integration card */
 .interlink-card{position:relative;overflow:hidden}.interlink-card .feature-note{display:block;margin-top:10px}.interlink-card button:disabled{opacity:.65;cursor:not-allowed}
+
+
+/* Wallet connected-state hard fix: hidden must override mobile header display rules. */
+.account-actions #connectBtn[hidden]{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+.account-actions #disconnectBtn[hidden]{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
