@@ -372,22 +372,19 @@ function updateWalletUI() {
 
 function syncHeaderWalletControls() {
   try {
-    const connected = Boolean(
-      tonConnectUI?.wallet?.account?.address ||
-      tonConnectUI?.account?.address ||
-      connectedWalletAddress
-    );
+    const connected = Boolean(getWalletAddress());
 
     if (connectBtn) {
       connectBtn.hidden = connected;
       connectBtn.setAttribute("aria-hidden", connected ? "true" : "false");
       connectBtn.style.setProperty("display", connected ? "none" : "inline-flex", "important");
+      connectBtn.disabled = connected;
     }
 
     if (disconnectBtn) {
       disconnectBtn.hidden = !connected;
-      if (connected) disconnectBtn.style.setProperty("display", "inline-flex", "important");
-      else disconnectBtn.style.setProperty("display", "none", "important");
+      disconnectBtn.setAttribute("aria-hidden", connected ? "false" : "true");
+      disconnectBtn.style.setProperty("display", connected ? "inline-flex" : "none", "important");
     }
   } catch (error) {
     console.warn("Goalkeeper header wallet sync:", error);
@@ -614,6 +611,9 @@ document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="visible") setTimeout(syncHeaderWalletControls,250);
 });
 setInterval(syncHeaderWalletControls,1000);
+window.addEventListener("load",()=>setTimeout(syncHeaderWalletControls,500));
+const gkHeaderObserver = new MutationObserver(()=>syncHeaderWalletControls());
+if (connectBtn) gkHeaderObserver.observe(connectBtn,{attributes:true,attributeFilter:["hidden","style","class"]});
 
 async function connectNewWallet() {
   const button = connectBtn;
@@ -977,7 +977,6 @@ if(shareGoalkeeperBtn)shareGoalkeeperBtn.addEventListener("click",()=>{
 });
 
 bindWalletButtons();
-if(connectBtn)connectBtn.hidden=false;
 updateAuthButtons();
 updateWalletUI();
 updateRewards();
