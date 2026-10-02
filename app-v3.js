@@ -934,9 +934,25 @@ updateRewards();
 applyLanguage(localStorage.getItem(LANGUAGE_KEY) || "en");
 
 window.addEventListener("load",()=>{
-  // Telegram can initialize at startup, but TON Connect is initialized
-  // lazily from the Connect button to keep the UI responsive in Chrome.
   initTelegram().catch((error)=>console.error("Telegram startup:",error));
+
+  // Restore the existing TON Connect session on every page reload.
+  // Without this startup restore, connectedWalletAddress is empty until the
+  // user presses Connect again, which makes the header/card look disconnected.
+  setTimeout(async()=>{
+    try{
+      const ui=await ensureTonConnect();
+      if(ui){
+        try{await ui.connectionRestored;}catch{}
+        const restored=ui.account?.address||ui.wallet?.account?.address||connectedWalletAddress||"";
+        if(restored) connectedWalletAddress=restored;
+        updateWalletUI();
+      }
+    }catch(error){
+      console.warn("TON wallet startup restore:",error);
+      updateWalletUI();
+    }
+  },150);
 });
 
 setInterval(()=>{try{updateCheckinTimer();}catch(error){console.error("Check-in timer:",error);}},1000);
